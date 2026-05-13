@@ -4,6 +4,7 @@
 //переносы формул нормальные
 //сделать j справа местами
 //сделать x x красивее
+//сделать обход мэгн
 
 #import "@local/typst-bsuir-core:1.15.42": *
 #import "@preview/zap:0.5.0"
@@ -349,7 +350,105 @@
   )
 ) <vector-topo-diagram>
 
-// TODO ПУНКТ 5
+= Уравнения по законам Кирхгофа при наличии магнитной связи
+
+/*
+ПОЯСНЕНИЕ ДЛЯ ТЕБЯ:
+В задании сказано "Полагая наличие индуктивной связи между ЛЮБЫМИ двумя индуктивностями...".
+В твоем варианте индуктивности есть в ветвях 2, 5, 6, 7.
+Самый удобный и наглядный вариант — взять смежные катушки L5 и L6 (они обе сходятся в узле 1).
+
+Мы выбираем "согласное" включение (точки стоят у начал ветвей).
+Согласное включение означает, что токи i5 и i6 входят в "точки" одинаково (i5 течет от 3 к 1 — входит в точку у узла 3; i6 течет от 1 к 6 — входит в точку у узла 1).
+Поэтому в дифференциальных уравнениях взаимная индукция M будет с плюсом: + M*(di/dt).
+
+В исходной схеме 6 узлов и 7 ветвей.
+Число уравнений по 1-му закону Кирхгофа (для узлов): Узлы - 1 = 6 - 1 = 5.
+Число уравнений по 2-му закону Кирхгофа (для контуров): Ветви - Узлы + 1 = 7 - 6 + 1 = 2.
+Итого 7 уравнений для 7 неизвестных токов.
+*/
+
+Полагаем, что между катушками индуктивности $L_5$ и $L_6$ существует магнитная связь со взаимной индуктивностью $M$. Выберем согласное включение катушек (одноименные зажимы обозначены точками у начал соответствующих ветвей). Схема цепи с учетом магнитной связи представлена на рисунке @coupled-circuit.
+
+#lab-figure(
+  caption: [Схема электрической цепи с учетом магнитной связи],
+  above: -1em,
+  circuit-better(scale-factor: 85%, {
+    import zap: *
+
+    node-better("3", (0, 8), label: (content: "3", anchor: "left"), visible: true)
+    node-better("1", (0, 16), label: (content: "1", anchor: "top"), visible: true)
+    node-better("6", (12, 16), label: (content: "6", anchor: "top"), visible: true)
+    node-better("4", (12, 8), label: (content: "4", anchor: "top-right", distance: 0.4), visible: true)
+    node-better("2", (12, 0), label: (content: "2", anchor: "bottom"), visible: true)
+    node-better("5", (0, 0), label: (content: "5", anchor: "bottom"), visible: true)
+
+    // Ветви 5 и 6 с точками (одноименными зажимами)
+    inductor-better("L5", "3", "1", label: (content: $L_5$, anchor: "left"), arrow-label: $I_5$, arrow-side: "right", arrow-dir: "forward")
+
+    inductor-better("L6", "1", "6", label: (content: $L_6$, anchor: "top"), arrow-label: $I_6$, arrow-side: "bottom", arrow-dir: "forward")
+
+    // Дуга, обозначающая взаимную индуктивность M (смещена от центров стрелок)
+    cetz.draw.bezier(
+      (0.5, 13.5), (4.5, 15.5), (2.5, 14),
+      mark: (start: ">", end: ">"),
+      stroke: (dash: "dashed", thickness: 1pt)
+    )
+    cetz.draw.content((3, 13.5), $M$)
+
+    resistor-better("R1", "6", "4", label: (content: $R_1$, anchor: "right"), arrow-label: $I_1$, arrow-side: "left", arrow-dir: "forward")
+
+    wire("6", (17, 16))
+    jsource-better("J1", (17, 16), (17, 8), arrow-dir: "forward", label: (content: $J_1$, anchor: "right"))
+    wire((17, 8), "4")
+
+    resistor-better("R2", "4", (12, 4.2), label: (content: $R_2$, anchor: "right"), arrow-label: $I_2$, arrow-side: "left", arrow-dir: "forward")
+    inductor-better("L2", (12, 4.2), (12, 2.7), label: (content: $L_2$, anchor: "right"))
+    capacitor-better("C2", (12, 2.7), "2", label: (content: $C_2$, anchor: "right"))
+
+    resistor-better("R3", "2", (8, 0), label: (content: $R_3$, anchor: "bottom"), arrow-label: $I_3$, arrow-side: "top", arrow-dir: "forward")
+    capacitor-better("C3", (8, 0), (4, 0), label: (content: $C_3$, anchor: "bottom"))
+    source-better("E3", (4, 0), "5", label: (content: $E_3$, anchor: "bottom"), arrow-dir: "forward")
+
+    resistor-better("R4", "5", (0, 4), label: (content: $R_4$, anchor: "left"), arrow-label: $I_4$, arrow-side: "right", arrow-dir: "forward")
+    capacitor-better("C4", (0, 4), "3", label: (content: $C_4$, anchor: "left"))
+
+    inductor-better("L7", "4", (6, 8), label: (content: $L_7$, anchor: "bottom"), arrow-label: $I_7$, arrow-side: "top", arrow-dir: "forward")
+    capacitor-better("C7", (6, 8), "3", label: (content: $C_7$, anchor: "bottom"))
+  })
+) <coupled-circuit>
+
+Запишем систему интегро-дифференциальных уравнений для мгновенных значений токов и напряжений. Система состоит из пяти уравнений по первому закону Кирхгофа (для узлов 1, 2, 3, 4, 5) и двух уравнений по второму закону Кирхгофа (для контуров 3-1-6-4-3 и 4-2-5-3-4):
+
+#mathtype-mimic[ //todo d and i dist too big?
+  $ cases(
+    i_5 - i_6 = 0,
+    i_2 - i_3 = 0,
+    i_4 + i_7 - i_5 = 0,
+    i_1 - i_2 - i_7 + j_1 = 0,
+    i_3 - i_4 = 0,
+
+    L_5 (d i_5)/(d t) + M (d i_6)/(d t) + L_6 (d i_6)/(d t) + M (d i_5)/(d t) + i_1 R_1 + L_7 (d i_7)/(d t) + 1/C_7 integral i_7 d t = 0,
+
+    i_2 R_2 + L_2 (d i_2)/(d t) + 1/C_2 integral i_2 d t + i_3 R_3 + 1/C_3 integral i_3 d t + i_4 R_4 + 1/C_4 integral i_4 d t - L_7 (d i_7)/(d t) - 1/C_7 integral i_7 d t = e_3
+  ) $
+]
+
+Запишем эту же систему уравнений в комплексной форме. Учитывая, что $(d i)/(d t) -> j omega dot(I)$, $1/C integral i d t -> 1/(j omega C) dot(I) = -j X_C dot(I)$ и $omega M = X_M$, получим:
+
+#mathtype-mimic[
+  $ cases(
+    dot(I)_5 - dot(I)_6 = 0,
+    dot(I)_2 - dot(I)_3 = 0,
+    dot(I)_4 + dot(I)_7 - dot(I)_5 = 0,
+    dot(I)_1 - dot(I)_2 - dot(I)_7 + dot(J)_1 = 0,
+    dot(I)_3 - dot(I)_4 = 0,
+
+    j X_(L 5) dot(I)_5 + j X_M dot(I)_6 + j X_(L 6) dot(I)_6 + j X_M dot(I)_5 + R_1 dot(I)_1 + (j X_(L 7) - j X_(C 7)) dot(I)_7 = 0,
+
+    (R_2 + j X_(L 2) - j X_(C 2)) dot(I)_2 + (R_3 - j X_(C 3)) dot(I)_3 + (R_4 - j X_(C 4)) dot(I)_4 - (j X_(L 7) - j X_(C 7)) dot(I)_7 = dot(E)_3
+  ) $
+]
 
 /*
 ПОЯСНЕНИЕ ДЛЯ ТЕБЯ: ЧТО ПРОИСХОДИТ В MATHCAD
