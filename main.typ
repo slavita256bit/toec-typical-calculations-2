@@ -5,8 +5,11 @@
 //сделать j справа местами
 //сделать x x красивее
 //сделать обход мэгн
+//убрать говнотекст
 
-#import "@local/typst-bsuir-core:1.15.42": *
+// мб ,00 -> []
+
+#import "@local/typst-bsuir-core:1.15.45": *
 #import "@preview/zap:0.5.0"
 
 #set text(font: "Times New Roman", size: 14pt)
@@ -39,7 +42,11 @@
 #include complex-math
 
 #show math.equation: eq => {
-  show regex(",00"): none // Убираем лишние нули, если они появляются
+  // \u{2060}? "проглатывает" невидимый символ от библиотеки
+  // ([^0-9]|$) гарантирует, что мы не сломаем числа вроде 1,005
+  show regex(",\u{2060}?00+([^0-9]|$)"): it => {
+    if it.text.ends-with("0") { none } else { it.text.slice(-1) }
+  }
   eq
 }
 
@@ -198,7 +205,8 @@
 
 #mathtype-mimic[
   $ dot(Z)_156 &= dot(Z)_1 + dot(Z)_5 + dot(Z)_6 = #V.R1 + j #V.XL5 + j #V.XL6 = #display-complex(Z156).both " Ом"; $
-  $ dot(Z)_234 &= dot(Z)_2 + dot(Z)_3 + dot(Z)_4 = (#display-complex(Z2).rect) + (#display-complex(Z3).rect) + (#display-complex(Z4).rect) = #display-complex(Z234).both " Ом". $
+  $ dot(Z)_234 &= dot(Z)_2 + dot(Z)_3 + dot(Z)_4 = (#display-complex(Z2).rect) + (#display-complex(Z3).rect) + (#display-complex(Z4).rect) = $
+  $ = #display-complex(Z234).both " Ом". $
 ]
 
 В результате эквивалентных преобразований исходная схема сводится к схеме с двумя узлами (3 и 4) и тремя параллельными ветвями (рис. @two-loop-circuit).
@@ -434,6 +442,7 @@
   ) $
 ]
 
+//todo small integral -> big?
 Запишем эту же систему уравнений в комплексной форме. Учитывая, что $(d i)/(d t) -> j omega dot(I)$, $1/C integral i d t -> 1/(j omega C) dot(I) = -j X_C dot(I)$ и $omega M = X_M$, получим:
 
 #mathtype-mimic[
@@ -477,7 +486,7 @@ IK — это сами контурные токи. Чтобы получить 
 = Определение токов в ветвях исходной схемы методом законов Кирхгофа
 
 Для проверки аналитических расчетов была составлена система уравнений по законам Кирхгофа и решена в среде Mathcad.
-#figure(image("mathcad/mathcad6.png", width: 85%), numbering: none)
+#figure(image("mathcad/mathcad6.png", width: 100%), numbering: none)
 
 #block(breakable: false)[
 #set par(spacing: 0.8em)
@@ -496,7 +505,7 @@ B1 — столбец, куда ушли все известные значен�
 
 = Определение токов в ветвях исходной схемы методом контурных токов
 
-#figure(image("mathcad/mathcad7.png", width: 65%), numbering: none)
+#figure(image("mathcad/mathcad7.png", width: 85%), numbering: none)
 
 #block(breakable: false)[
 #set par(spacing: 0.8em)
@@ -546,8 +555,8 @@ B1 — столбец, куда ушли все известные значен�
 Напряжение холостого хода $dot(U)_(x x)$ между узлами 3 и 1 найдем как разность потенциалов:
 #let U_xx = sub(mul(J1, Z1), mul(I7_xx, Z7))
 #mathtype-mimic(receive: true)[
-  $ dot(U)_(x x) &= dot(phi)_3 - dot(phi)_1 = dot(phi)_3 - dot(phi)_6 = (dot(phi)_4 - dot(I)_(7 x x) dot(Z)_7) - (dot(phi)_4 - dot(J)_1 dot(Z)_1) = \
-  &= dot(J)_1 dot(Z)_1 - dot(I)_(7 x x) dot(Z)_7 = #display-complex(U_xx).polar " В". $
+  $ dot(U)_(x x) &= dot(phi)_3 - dot(phi)_1 = dot(phi)_3 - dot(phi)_6 = (dot(phi)_4 - dot(I)_(7 x x) dot(Z)_7) - (dot(phi)_4 - dot(J)_1 dot(Z)_1) = $
+  $ = dot(J)_1 dot(Z)_1 - dot(I)_(7 x x) dot(Z)_7 = #display-complex(U_xx).polar " В". $
 ]
 
 //todo улучшить первую схему и заменить эту той (ну типо чтобы токи сверху были)
@@ -608,8 +617,8 @@ B1 — столбец, куда ушли все известные значен�
 #let Z_gen = add(add(Z1, Z6), Z43)
 
 #mathtype-mimic[
-  $ dot(Z)_"ген" &= dot(Z)_6 + dot(Z)_1 + (dot(Z)_7 dot dot(Z)_234) / (dot(Z)_7 + dot(Z)_234) = \
-  &= j #V.XL6 + #V.R1 + (#display-complex(Z7).rect dot (#display-complex(Z234).rect)) / (#display-complex(Z7).rect + (#display-complex(Z234).rect)) = #display-complex(Z_gen).both " Ом". $
+  $ dot(Z)_"ген" &= dot(Z)_6 + dot(Z)_1 + (dot(Z)_7 dot dot(Z)_234) / (dot(Z)_7 + dot(Z)_234) = j #V.XL6 + #V.R1 + (#display-complex(Z7).rect dot (#display-complex(Z234).rect)) / (#display-complex(Z7).rect + (#display-complex(Z234).rect)) $
+  $ = #display-complex(Z_gen).both " Ом". $
 ]
 
 #lab-figure(
