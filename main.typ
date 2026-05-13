@@ -1,13 +1,9 @@
 //todo distance between arrows and names
 //move some things like spaces between text blocks from courceproject to
 //масштаб для диаграмм прописать штоле
-//переносы формул нормальные
-//сделать j справа местами
 //сделать x x красивее
 //сделать обход мэгн
 //убрать говнотекст
-
-// мб ,00 -> []
 
 #import "@local/typst-bsuir-core:1.15.45": *
 #import "@preview/zap:0.5.0"
