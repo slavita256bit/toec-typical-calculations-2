@@ -1,4 +1,4 @@
-#import "@local/typst-bsuir-core:1.15.54": *
+#import "@local/typst-bsuir-core:1.16.15": *
 #import "@preview/zap:0.5.0"
 
 #set text(font: "Times New Roman", size: 14pt)
@@ -14,7 +14,7 @@
     variant: "558301-14",
   ),
   manager: (
-    name: "Батюков С.В.",
+    name: "Батюков С. В.",
   ),
   performer: (
     name: "Ермаков В. С.",
@@ -30,20 +30,6 @@
 
 #show: apply-toec-styling
 #include complex-math
-
-#show math.equation: eq => {
-  show regex(",\u{2060}?00+([^0-9]|$)"): it => {
-    if it.text.ends-with("0") { none } else { it.text.slice(-1) }
-  }
-  eq
-}
-
-// #show math.equation: it => {
-//   show regex("[\u{0370}-\u{03FF}]"): set text(style: "normal")
-//   it
-// }
-//
-// $ alpha + beta = Gamma j $
 
 // ==========================================
 // БЛОК ВЫЧИСЛЕНИЙ (на печать не выводится)
@@ -295,7 +281,7 @@
   $ Q_"ист" &= #S_source_rect.im " ВАр". $
 ]
 
-Активная мощность, рассеиваемая на активных сопротивлениях:
+Активная мощность на сопротивлениях:
 #let P_load = (
   calc.pow(I1_m, 2) * V.R1 + calc.pow(I2_m, 2) * V.R2 + calc.pow(I3_m, 2) * V.R3 + calc.pow(I4_m, 2) * V.R4
 )
@@ -342,7 +328,7 @@
 #lab-figure(
   caption: [Векторная диаграмма токов и топографическая диаграмма напряжений],
   above: -3em,
-  gap: -2em,
+  gap: -3em,
   scale(80%, vector-diagram(
     chain-voltages: false, chain-currents: false,
     voltages: (
@@ -359,9 +345,13 @@
     ),
     sum-voltage: (enabled: false), sum-current: (enabled: false),
     current-color: black, voltage-color: black,
-    axes: (x: 8, y: 15)
+    axes: (x: 8, y: 16),
+    scale-label-pos: "end",
+    voltage-scale: (value: 5, unit: "В"),      // 1 единица на диаграмме = 1/0.2 = 5 В
+    current-scale: (value: 0.25, unit: "А"),  // 1 единица на диаграмме = 1/4 = 0.25 А
   ))
 ) <vector-topo-diagram>
+
 
 // ПОЯСНЕНИЕ: В этом разделе я перефразировал все так, чтобы М было с плюсом, обосновав это согласным включением.
 = Уравнения по законам Кирхгофа при наличии индуктивной связи
@@ -430,7 +420,7 @@
 ]
 
 = Расчет методом законов Кирхгофа
-#figure(image("mathcad/mathcad6.png", width: 90%), numbering: none)
+#figure(image("mathcad/mathcad6.png", width: 80%), numbering: none)
 
 #block(breakable: false)[
 #set par(spacing: 0.8em)
@@ -442,7 +432,7 @@
 ]
 
 = Расчет методом контурных токов
-#figure(image("mathcad/mathcad7.png", width: 85%), numbering: none)
+#figure(image("mathcad/mathcad7.png", width: 65%), numbering: none)
 
 #block(breakable: false)[
 #set par(spacing: 0.8em)
@@ -462,7 +452,7 @@
 
 #block(breakable: false)[
 #set par(spacing: 0.8em)
-Где $A$ – узловая матрица инциденций;
+Где $A$ – узловая матрица соединений;
 
 #h(1.7em) $G$ – диагональная матрица проводимостей ветвей;
 
@@ -474,24 +464,28 @@
 // ПОЯСНЕНИЕ: В МЭГН текст сжат до алгоритма: Обрыв ветви -> Uxx -> Zген -> Ток.
 = Определение тока в ветви 5 методом эквивалентного генератора (МЭГН)
 
-Исключим ветвь 5 из исходной схемы. //Поскольку узел 1 повисает в воздухе, ток $dot(I)_6 = 0$, и весь ток источника $dot(J)_1$ замыкается через ветвь 1: $dot(I)_"1xx" = -dot(J)_1$.
-Для замкнутого контура, образованного ветвью 7 и ветвью 2-3-4, ток равен:
-#let I7_xx = div(E3, add(Z7, Z234))
+Исключим ветвь 5 из исходной схемы. //Поскольку ветвь 5 разомкнута, ток источника $dot(J)_1$ будет полностью замыкаться через ветвь 1.
+Cоставим уравнение по второму закону Кирхгофа:
 #mathtype-mimic[
-  $ dot(I)'_7 = dot(E)_3 / (dot(Z)_7 + dot(Z)_234) = #display-complex(I7_xx).polar " А". $
+  $ dot(I)'_7 thin dot(Z)_7 - dot(I)'_234 thin dot(Z)_234 = -dot(E)_3. $
+]
+Учитывая, что $dot(I)'_234 = -dot(I)'_7$, ток $dot(I)'_7$ равен:
+#let I7_xx = div(sub(rect(0,0), E3), add(Z7, Z234))
+#mathtype-mimic[
+  $ dot(I)'_7 = (-dot(E)_3) / (dot(Z)_7 + dot(Z)_234) = #display-complex(I7_xx).polar " А". $
 ]
 
 Напряжение холостого хода (рис. @meg-xx):
 #let U_xx = sub(mul(J1, Z1), mul(I7_xx, Z7))
 #mathtype-mimic[
-  $ dot(U)_"xx" = dot(phi)_3 - dot(phi)_1 = dot(J)_1 dot(Z)_1 - dot(I)'_7 dot(Z)_7 = #display-complex(U_xx).polar " В". $
+  $ dot(U)_"xx" = dot(phi)_3 - dot(phi)_1 = dot(J)_1 thin dot(Z)_1 - dot(I)'_7 thin dot(Z)_7 = #display-complex(U_xx).polar " В". $
 ]
 
 #lab-figure(
   caption: [Схема для определения напряжения холостого хода],
-  above: -5em,
-  gap: -4em,
-  scale(85%, circuit-better(scale-factor: 85%, {
+  above: -3em,
+  gap: -1em,
+  circuit-better(scale-factor: 85%, {
     import zap: *
     node-better("3", (0, 8), label: (content: "3", anchor: "left"), visible: true)
     node-better("1", (0, 16), label: (content: "1", anchor: "top-left"), visible: true)
@@ -526,14 +520,17 @@
     current-arrow("I7xx", "4", (9, 8), arrow-label: $dot(I)'_7$, arrow-side: "top")
     inductor-better("L7", (9, 8), (4, 8), label: (content: $L_7$, anchor: "bottom"))
     capacitor-better("C7", (4, 8), "3", label: (content: $C_7$, anchor: "bottom"))
-  }))
+  })
 ) <meg-xx>
 
-Эквивалентное сопротивление генератора (рис.~@meg-zgen):
 #let Z43 = div(mul(Z7, Z234), add(Z7, Z234))
 #let Z_gen = add(add(Z1, Z6), Z43)
+
+#unbreakable[
+Эквивалентное сопротивление генератора (рис.~@meg-zgen):
 #mathtype-mimic[
   $ dot(Z)_"ген" = dot(Z)_6 + dot(Z)_1 + (dot(Z)_7 dot dot(Z)_234) / (dot(Z)_7 + dot(Z)_234) = #display-complex(Z_gen).both " Ом". $
+]
 ]
 
 #lab-figure(
@@ -575,7 +572,7 @@
   $ dot(I)_5 = dot(U)_"xx" / (dot(Z)_"ген" + dot(Z)_5) = (#display-complex(U_xx).polar) / (#display-complex(Z_gen).rect + #im(V.XL5)) = #display-complex(I5_meg).polar " А". $
 ]
 
-
+#pagebreak()
 = Таблица ответов
 
 #let tbl_row(name, complex_val) = {
@@ -589,6 +586,8 @@
     _fmt(p.ang, digits: 3)
   )
 }
+
+#let S_load = rect(P_load, Q_load)
 
 #figure(
   caption: [Результаты расчета],
@@ -609,7 +608,7 @@
     ..tbl_row([Ток $dot(I)_6$, А], I6),
     ..tbl_row([Ток $dot(I)_7$, А], I7),
     ..tbl_row([Мощность $dot(S)_"ист"$, ВА], S_source),
-//     ..tbl_row([Мощность $dot(S)_"потр"$, ВА], S_),
+    ..tbl_row([Мощность $dot(S)_"потр"$, ВА], S_load),
     ..tbl_row([$dot(U)_"xx"$, В], U_xx),
     ..tbl_row([$dot(Z)_"ген"$, Ом], Z_gen),
   )
