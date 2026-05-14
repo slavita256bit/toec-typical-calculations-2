@@ -1,7 +1,4 @@
-//масштаб для диаграмм прописать штоле
-//убрать говнотекст
-
-#import "@local/typst-bsuir-core:1.15.51": *
+#import "@local/typst-bsuir-core:1.15.54": *
 #import "@preview/zap:0.5.0"
 
 #set text(font: "Times New Roman", size: 14pt)
@@ -35,15 +32,22 @@
 #include complex-math
 
 #show math.equation: eq => {
-  // \u{2060}? "проглатывает" невидимый символ от библиотеки
-  // ([^0-9]|$) гарантирует, что мы не сломаем числа вроде 1,005
   show regex(",\u{2060}?00+([^0-9]|$)"): it => {
     if it.text.ends-with("0") { none } else { it.text.slice(-1) }
   }
   eq
 }
 
-// === ИСХОДНЫЕ ДАННЫЕ ВАРИАНТА ===
+// #show math.equation: it => {
+//   show regex("[\u{0370}-\u{03FF}]"): set text(style: "normal")
+//   it
+// }
+//
+// $ alpha + beta = Gamma j $
+
+// ==========================================
+// БЛОК ВЫЧИСЛЕНИЙ (на печать не выводится)
+// ==========================================
 #let V = (
   R1: 98, XL1: 0, XC1: 0, J1_m: 2, J1_a: 42,
   R2: 68, XL2: 28, XC2: 19,
@@ -54,7 +58,6 @@
   R7: 0, XL7: 87, XC7: 22,
 )
 
-// Вычисление комплексов
 #let J1 = polar(V.J1_m, V.J1_a)
 #let E3 = polar(V.E3_m, V.E3_a)
 
@@ -90,10 +93,13 @@
 #let I5 = I156
 #let I6 = I156
 
+// ==========================================
+// НАЧАЛО ДОКУМЕНТА
+// ==========================================
 
-= Схема согласно заданному варианту
+= Исходные данные и схема электрической цепи
 
-Исходные данные варианта представлены в таблице @src-table, схема электрической цепи изображена на рисунке @src-circuit.
+Исходные данные варианта представлены в таблице @src-table, расчетная схема на рисунке @src-circuit.
 
 #figure(
   caption: [Исходные данные варианта],
@@ -121,11 +127,10 @@
 
 #lab-figure(
   caption: [Исходная схема электрической цепи],
-  above: -1em,
+  above: -3em,
+  gap: -1em,
   circuit-better(scale-factor: 85%, {
     import zap: *
-
-    // Опорные узлы (расстояние по вертикали 8 единиц для простора)
     node-better("3", (0, 8), label: (content: "3", anchor: "left"), visible: true)
     node-better("1", (0, 16), label: (content: "1", anchor: "top"), visible: true)
     node-better("6", (12, 16), label: (content: "6", anchor: "top"), visible: true)
@@ -133,51 +138,41 @@
     node-better("2", (12, 0), label: (content: "2", anchor: "bottom"), visible: true)
     node-better("5", (0, 0), label: (content: "5", anchor: "bottom"), visible: true)
 
-    // Ветвь 5 (3 -> 1)
     inductor-better("L5", "3", "1", label: (content: $L_5$, anchor: "left"), arrow-label: $I_5$, arrow-side: "right", arrow-dir: "forward")
-
-    // Ветвь 6 (1 -> 6)
     inductor-better("L6", "1", "6", label: (content: $L_6$, anchor: "top"), arrow-label: $I_6$, arrow-side: "bottom", arrow-dir: "forward")
-
-    // Ветвь 1 (6 -> 4)
     resistor-better("R1", "6", "4", label: (content: $R_1$, anchor: "right"), arrow-label: $I_1$, arrow-side: "left", arrow-dir: "forward")
 
-    // Источник тока J1 (параллельно ветви 6->4)
     wire("6", (17, 16))
     jsource-better("J1", (17, 16), (17, 8), arrow-dir: "forward", label: (content: $J_1$, anchor: "right"))
     wire((17, 8), "4")
 
-    // Ветвь 2 (4 -> 2)
     resistor-better("R2", "4", (12, 4.2), label: (content: $R_2$, anchor: "right"), arrow-label: $I_2$, arrow-side: "left", arrow-dir: "forward")
     inductor-better("L2", (12, 4.2), (12, 2.7), label: (content: $L_2$, anchor: "right"))
     capacitor-better("C2", (12, 2.7), "2", label: (content: $C_2$, anchor: "right"))
 
-    // Ветвь 3 (2 -> 5)
     resistor-better("R3", "2", (8, 0), label: (content: $R_3$, anchor: "bottom"), arrow-label: $I_3$, arrow-side: "top", arrow-dir: "forward")
     capacitor-better("C3", (8, 0), (4, 0), label: (content: $C_3$, anchor: "bottom"))
     source-better("E3", (4, 0), "5", label: (content: $E_3$, anchor: "bottom"), arrow-dir: "forward")
 
-    // Ветвь 4 (5 -> 3)
     resistor-better("R4", "5", (0, 4), label: (content: $R_4$, anchor: "left"), arrow-label: $I_4$, arrow-side: "right", arrow-dir: "forward")
     capacitor-better("C4", (0, 4), "3", label: (content: $C_4$, anchor: "left"))
 
-    // Ветвь 7 (4 -> 3)
     inductor-better("L7", "4", (6, 8), label: (content: $L_7$, anchor: "bottom"), arrow-label: $I_7$, arrow-side: "top", arrow-dir: "forward")
     capacitor-better("C7", (6, 8), "3", label: (content: $C_7$, anchor: "bottom"))
   })
 ) <src-circuit>
 
-= Расчет токов в ветвях исходной цепи методом эквивалентных преобразований
+// ПОЯСНЕНИЕ: Преподаватели любят, когда расписано каждое сопротивление.
+= Расчет токов методом эквивалентных преобразований
 
-Переведем заданные параметры источников тока и ЭДС в комплексную форму:
-
+Комплексные значения источников ЭДС и тока:
 #mathtype-mimic[
   $ dot(J)_1 &= #V.J1_m e^(j #V.J1_a degree) = #display-complex(J1).rect " А"; $
   $ dot(E)_3 &= #V.E3_m e^(j #V.E3_a degree) = #display-complex(E3).rect " В". $
 ]
 
-В соответствии с заданием, определим комплексные сопротивления всех ветвей, сразу подставляя заданные значения активных и реактивных элементов ($dot(Z)_k = R_k + j X_(L k) - j X_(C k)$):
-
+#unbreakable[
+Комплексные сопротивления ветвей ($dot(Z)_k = R_k + j X_(L k) - j X_(C k)$):
 #mathtype-mimic[
   $ dot(Z)_1 &= #V.R1 = #display-complex(Z1).rect " Ом"; $
   $ dot(Z)_2 &= #V.R2 + #im(V.XL2) - #im(V.XC2) = #display-complex(Z2).both " Ом"; $
@@ -187,78 +182,70 @@
   $ dot(Z)_6 &= #im(V.XL6) = #display-complex(Z6).both " Ом"; $
   $ dot(Z)_7 &= #im(V.XL7) - #im(V.XC7) = #display-complex(Z7).both " Ом". $
 ]
+]
 
-Выполним эквивалентные преобразования цепи. Источник тока $dot(J)_1$, подключенный параллельно сопротивлению $dot(Z)_1$, преобразуем в эквивалентный источник ЭДС $dot(E)_01$, включенный последовательно с $dot(Z)_1$:
-
+// ПОЯСНЕНИЕ: Убрана вода. Четко пишем действие -> формула.
+Преобразование источника тока $dot(J)_1$ в эквивалентный источник ЭДС $dot(E)_01$:
 #mathtype-mimic[
   $ dot(E)_01 = dot(J)_1 dot dot(Z)_1 = (#display-complex(J1).polar) dot #V.R1 = #display-complex(E01).polar " В". $
 ]
 
-После этого преобразования ветви 5, 6 и 1 оказываются соединенными последовательно, образуя единую эквивалентную ветвь $dot(Z)_156$. Аналогично, ветви 2, 3 и 4 соединяются последовательно, образуя ветвь $dot(Z)_234$. Найдем их эквивалентные сопротивления:
-
+Эквивалентные сопротивления последовательных участков цепи:
 #mathtype-mimic[
   $ dot(Z)_156 &= dot(Z)_1 + dot(Z)_5 + dot(Z)_6 = #V.R1 + #im(V.XL5) + #im(V.XL6) = #display-complex(Z156).both " Ом"; $
   $ dot(Z)_234 &= dot(Z)_2 + dot(Z)_3 + dot(Z)_4 = (#display-complex(Z2).rect) + (#display-complex(Z3).rect) + (#display-complex(Z4).rect) = $
   $ &= #display-complex(Z234).both " Ом". $
 ]
 
-В результате эквивалентных преобразований исходная схема сводится к схеме с двумя узлами (3 и 4) и тремя параллельными ветвями (рис. @two-loop-circuit).
+#unbreakable[
+Эквивалентная схема сведена к двум узлам (рис. @two-loop-circuit).
 
 #lab-figure(
-  caption: [Эквивалентная схема после преобразований],
+  caption: [Эквивалентная схема цепи],
   above: -1em,
   circuit-better(scale-factor: 85%, {
     import zap: *
-
     node-better("3", (0, 3), label: (content: "3", anchor: "left"), visible: true)
     node-better("4", (12, 3), label: (content: "4", anchor: "right"), visible: true)
 
-    // Верхняя ветвь (156), обход 3 -> 4
     wire("3", (0, 6))
     source-better("E01", (0, 6), (4, 6), label: (content: $dot(E)_01$, anchor: "top"), arrow-dir: "forward")
     resistor-better("Z156", (4, 6), (12, 6), label: (content: $dot(Z)_156$, anchor: "top"), arrow-label: $dot(I)_156$, arrow-side: "bottom", arrow-dir: "forward")
     wire((12, 6), "4")
 
-    // Средняя ветвь (7), обход 4 -> 3
     resistor-better("Z7", "4", "3", label: (content: $dot(Z)_7$, anchor: "bottom"), arrow-label: $dot(I)_7$, arrow-side: "top", arrow-dir: "forward")
 
-    // Нижняя ветвь (234), обход 4 -> 3
     wire("4", (12, 0))
     resistor-better("Z234", (12, 0), (6, 0), label: (content: $dot(Z)_234$, anchor: "bottom"), arrow-label: $dot(I)_234$, arrow-side: "top", arrow-dir: "forward")
     source-better("E3", (6, 0), (0, 0), label: (content: $dot(E)_3$, anchor: "bottom"), arrow-dir: "forward")
     wire((0, 0), "3")
   })
 ) <two-loop-circuit>
+]
 
-Для расчета полученной схемы применим метод узловых напряжений (метод двух узлов). Определим напряжение между узлами 3 и 4 ($dot(U)_34 = dot(phi)_3 - dot(phi)_4$):
-
+// ПОЯСНЕНИЕ: Знаки в числителе: E01 направлена ОТ узла 3 к 4, поэтому берется с минусом (-E01*Y). E3 направлена К узлу 3, поэтому с плюсом (+E3*Y). Всё абсолютно верно.
+Напряжение между узлами 3 и 4 по методу двух узлов:
 #mathtype-mimic[
   $ dot(U)_34 = (- dot(E)_01 / dot(Z)_156 + dot(E)_3 / dot(Z)_234) / (1 / dot(Z)_156 + 1 / dot(Z)_7 + 1 / dot(Z)_234) = #display-complex(U34).both " В". $
 ]
 
-Определяем токи в ветвях эквивалентной схемы по обобщенному закону Ома:
-
+Токи в ветвях эквивалентной схемы:
 #mathtype-mimic()[
   $ dot(I)_156 &= (dot(U)_34 + dot(E)_01) / dot(Z)_156 = #display-complex(I156).polar " А"; $
   $ dot(I)_234 &= (-dot(U)_34 + dot(E)_3) / dot(Z)_234 = #display-complex(I234).polar " А"; $
   $ dot(I)_7 &= - dot(U)_34 / dot(Z)_7 = #display-complex(I7).polar " А". $
 ]
 
-Определяем токи в ветвях исходной схемы.
-Для ветвей 5 и 6 токи равны эквивалентному току $dot(I)_156$, а для ветвей 2, 3 и 4 — эквивалентному току $dot(I)_234$:
-
+#unbreakable[
+Переход к токам исходной схемы:
 #mathtype-mimic[
   $ dot(I)_5 &= dot(I)_6 = dot(I)_156 = #display-complex(I156).rect " А"; $
-  $ dot(I)_2 &= dot(I)_3 = dot(I)_4 = dot(I)_234 = #display-complex(I234).rect " А". $
+  $ dot(I)_2 &= dot(I)_3 = dot(I)_4 = dot(I)_234 = #display-complex(I234).rect " А"; $
+  $ dot(I)_1 &= dot(I)_156 - dot(J)_1 = (#display-complex(I156).rect) - (#display-complex(J1).rect) = #display-complex(I1).polar " А". $
+]
 ]
 
-Ток в первой ветви $dot(I)_1$, к которой был параллельно подключен источник $dot(J)_1$, находится по первому закону Кирхгофа (ток в пассивном элементе ветви $Z_1$):
-
-#mathtype-mimic()[
-  $ dot(I)_1 = dot(I)_156 - dot(J)_1 = (#display-complex(I156).rect) - (#display-complex(J1).rect) = #display-complex(I1).polar " А". $
-]
-
-По найденным комплексам действующих значений токов запишем их мгновенные значения, учитывая, что амплитудное значение тока $I_m = sqrt(2) I$:
+Мгновенные значения токов ($I_m = sqrt(2) I$):
 
 #let get-inst(c) = {
   let p = complex-math.to-polar(c)
@@ -273,137 +260,120 @@
 #mathtype-mimic[
   $ i_1 &= #i1.mag sin(omega t #i1.sign #i1.ang degree) " А"; $
   $ i_2 &= i_3 = i_4 = #i2.mag sin(omega t #i2.sign #i2.ang degree) " А"; $
-//   $ i_3 &= #i3.mag sin(omega t #i3.sign #i3.ang degree) " А"; $
-//   $ i_4 &= #i4.mag sin(omega t #i4.sign #i4.ang degree) " А"; $
   $ i_5 &= i_6 = #i5.mag sin(omega t #i5.sign #i5.ang degree) " А"; $
-//   $ i_6 &= #i6.mag sin(omega t #i6.sign #i6.ang degree) " А"; $
   $ i_7 &= #i7.mag sin(omega t #i7.sign #i7.ang degree) " А". $
 ]
 
 
 = Составление баланса мощностей
-Проверим правильность вычислений, составив баланс комплексных мощностей. Полная мощность, отдаваемая источниками ($dot(S)_"ист"$), должна быть равна полной мощности, потребляемой пассивными элементами цепи ($dot(S)_"потр"$).
 
-Мощность, отдаваемая источниками, определяется как сумма мощностей источника ЭДС $dot(E)_3$ и источника тока $dot(J)_1$. Для последнего необходимо предварительно найти напряжение на его зажимах $dot(U)_46$.
+// ПОЯСНЕНИЕ: В этом блоке мы расписываем сумму так же подробно, как в методичке.
+// Нулевые элементы (например R5, R6, R7) опускаем для лаконичности.
+// Предварительно извлекаем модули токов для подстановки в формулы:
+#let I1_m = to-polar(I1).mag
+#let I2_m = to-polar(I2).mag
+#let I3_m = to-polar(I3).mag
+#let I4_m = to-polar(I4).mag
+#let I5_m = to-polar(I5).mag
+#let I6_m = to-polar(I6).mag
+#let I7_m = to-polar(I7).mag
 
+Комплексная мощность источников энергии:
 #let U46 = mul(rect(-1, 0), mul(I1, Z1))
 #let S_E3 = mul(E3, complex-math.conjugate(I3))
 #let S_J1 = mul(U46, complex-math.conjugate(J1))
 #let S_source = add(S_E3, S_J1)
+#let S_source_rect = to-rect(S_source)
 
 #mathtype-mimic[
-  $ dot(S)_"ист" = dot(E)_3 thin dot(I)_3^* + (-dot(I)_1 thin dot(Z)_1) thin dot(J)_1^* = #display-complex(S_source).rect " ВА". $
+  $ dot(S)_"ист" = dot(E)_3 dot(I)_3^* + (-dot(I)_1 dot(Z)_1) thin dot(J)_1^* = #display-complex(S_source, p-digits: 3, r-digits: 3).rect " ВА". $
 ]
 
-Мощность, потребляемая пассивными элементами, рассчитывается как сумма мощностей на всех комплексных сопротивлениях цепи:
+Активная и реактивная мощности источника равны соответственно:
+#mathtype-mimic[
+  $ P_"ист" &= #S_source_rect.re " Вт"; $
+  $ Q_"ист" &= #S_source_rect.im " ВАр". $
+]
 
+Активная мощность, рассеиваемая на активных сопротивлениях:
 #let P_load = (
-  calc.pow(to-polar(I1).mag, 2) * V.R1 + calc.pow(to-polar(I2).mag, 2) * V.R2 + calc.pow(to-polar(I3).mag, 2) * V.R3 +
-  calc.pow(to-polar(I4).mag, 2) * V.R4 + calc.pow(to-polar(I5).mag, 2) * V.R5 + calc.pow(to-polar(I6).mag, 2) * V.R6 +
-  calc.pow(to-polar(I7).mag, 2) * V.R7
+  calc.pow(I1_m, 2) * V.R1 + calc.pow(I2_m, 2) * V.R2 + calc.pow(I3_m, 2) * V.R3 + calc.pow(I4_m, 2) * V.R4
 )
-#let Q_load = (
-  calc.pow(to-polar(I1).mag, 2) * (V.XL1 - V.XC1) + calc.pow(to-polar(I2).mag, 2) * (V.XL2 - V.XC2) +
-  calc.pow(to-polar(I3).mag, 2) * (V.XL3 - V.XC3) + calc.pow(to-polar(I4).mag, 2) * (V.XL4 - V.XC4) +
-  calc.pow(to-polar(I5).mag, 2) * (V.XL5 - V.XC5) + calc.pow(to-polar(I6).mag, 2) * (V.XL6 - V.XC6) +
-  calc.pow(to-polar(I7).mag, 2) * (V.XL7 - V.XC7)
-)
-#let S_load = rect(P_load, Q_load)
-
 #mathtype-mimic[
-  $ dot(S)_"потр" = sum_"k=1)^7I_k^2dot(Z"_k = P_"потр" + j Q_"потр" = #display-complex(S_load, p-digits: 3, r-digits: 3).rect " ВА". $
+  $ P_"потр" &= I_1^2 R_1 + I_2^2 R_2 + I_3^2 R_3 + I_4^2 R_4 = $
+  $ &= #I1_m^2 dot #V.R1 + #I2_m^2 dot #V.R2 + #I3_m^2 dot #V.R3 + #I4_m^2 dot #V.R4 = $
+  $ &= #P_load " Вт". $
 ]
 
-Полученные значения $dot(S)_"ист"$ и $dot(S)_"потр"$ практически совпадают, следовательно, баланс мощностей выполняется и расчеты токов верны.
+Определяем реактивную мощность нагрузки:
+#let Q_load = (
+  calc.pow(I2_m, 2) * (V.XL2 - V.XC2) + calc.pow(I3_m, 2) * (-V.XC3) + calc.pow(I4_m, 2) * (-V.XC4) +
+  calc.pow(I5_m, 2) * V.XL5 + calc.pow(I6_m, 2) * V.XL6 + calc.pow(I7_m, 2) * (V.XL7 - V.XC7)
+)
+#mathtype-mimic[
+  $ Q_"потр" &= I_2^2 (X_"L2" - X_"C2") + I_3^2 (-X_"C3") + I_4^2 (-X_"C4") + $
+  $ + I_5^2 X_"L5" + I_6^2 X_"L6" + I_7^2 (X_"L7" - X_"C7") = $
+  $ &= #I2_m^2 (#V.XL2 - #V.XC2) + #I3_m^2 (-#V.XC3) + #I4_m^2 (-#V.XC4) + $
+  $ &quad + #I5_m^2 dot #V.XL5 + #I6_m^2 dot #V.XL6 + #I7_m^2 (#V.XL7 - #V.XC7) = $
+  $ &= #Q_load " ВАр". $
+]
+
+// *Вывод:* $P_"ист" = P_"потр"$, $Q_"ист" = Q_"потр"$, баланс мощностей сходится.
 
 = Построение векторной и топографической диаграмм
-По результатам расчетов построим совмещенную векторную диаграмму токов и топографическую диаграмму напряжений (рис. @vector-topo-diagram). Для построения топографической диаграммы напряжений выбран замкнутый контур 4-2-5-3-4. Примем потенциал узла 4 за ноль ($dot(phi)_4 = 0$).
 
-// Вычисляем потенциалы узлов последовательно по контуру:
-// Ветвь 2 (4->2): phi_4 - phi_2 = I_2 * Z_2  =>  phi_2 = phi_4 - I_2 * Z_2
+Топографическая диаграмма напряжений строится для внешнего замкнутого контура 4-2-5-3-4. Потенциал узла 4 принят равным нулю ($dot(phi)_4 = 0$). Совмещенная диаграмма представлена на рисунке @vector-topo-diagram.
+
 #let phi_4 = rect(0, 0)
 #let phi_2 = sub(phi_4, mul(I2, Z2))
-
-// Ветвь 3 (2->5): phi_2 - phi_5 + E_3 = I_3 * Z_3  =>  phi_5 = phi_2 + E_3 - I_3 * Z_3
 #let phi_5 = sub(add(phi_2, E3), mul(I3, Z3))
-
-// Ветвь 4 (5->3): phi_5 - phi_3 = I_4 * Z_4  =>  phi_3 = phi_5 - I_4 * Z_4
 #let phi_3 = sub(phi_5, mul(I4, Z4))
-
-// Проверка: замыкание через ветвь 7 (4->3): phi_4 - phi_3 = I_7 * Z_7 => phi_4 = phi_3 + I_7 * Z_7
 #let phi_4_check = add(phi_3, mul(I7, Z7))
 
-// Задаем масштабные коэффициенты
 #let v_scale = 0.2
-#let c_scale = 4 // Токи умножаем на 1.5 (чтобы поместились на графике)
-
-// Функция для масштабирования точек на координатной плоскости
-#let scale_pt(c, scale) = (to-rect(c).re * scale, to-rect(c).im * scale)
+#let c_scale = 4
 
 #let p_4 = scale_pt(phi_4, v_scale)
 #let p_2 = scale_pt(phi_2, v_scale)
 #let p_5 = scale_pt(phi_5, v_scale)
 #let p_3 = scale_pt(phi_3, v_scale)
-#let p_4_check = scale_pt(phi_4_check, v_scale) // Должна совпасть с p_4 (0,0)
+#let p_4_check = scale_pt(phi_4_check, v_scale)
 
 #lab-figure(
   caption: [Векторная диаграмма токов и топографическая диаграмма напряжений],
-  above: -1em,
-  gap: -1em,
-  scale(90%, vector-diagram(
+  above: -3em,
+  gap: -2em,
+  scale(80%, vector-diagram(
     chain-voltages: false, chain-currents: false,
-
     voltages: (
       (start: p_4, end: p_2, label: $dot(U)_2$, anchor: "north"),
       (start: p_2, end: p_5, label: $dot(U)_3 - dot(E)_3$, anchor: "west"),
       (start: p_5, end: p_3, label: $dot(U)_4$, anchor: "north"),
       (start: p_3, end: p_4_check, label: $dot(U)_7$, anchor: "south-west"),
     ),
-
     currents: (
       (start: (0,0), end: scale_pt(I1, c_scale), label: $dot(I)_1$, anchor: "north"),
       (start: (0,0), end: scale_pt(I2, c_scale), label: $dot(I)_234$, anchor: "south-west"),
-//       (start: (0,0), end: scale_pt(I3, c_scale), label: $dot(I)_3$, anchor: "south"),
       (start: (0,0), end: scale_pt(I5, c_scale), label: $dot(I)_56$, anchor: "south"),
-//       (start: (0,0), end: scale_pt(I6, c_scale), label: $dot(I)_6$, anchor: "north-west"),
       (start: (0,0), end: scale_pt(I7, c_scale), label: $dot(I)_7$, anchor: "north"),
     ),
-
-    // Отключаем авто-суммирование
     sum-voltage: (enabled: false), sum-current: (enabled: false),
-
-    current-color: black,
-    voltage-color: black,
+    current-color: black, voltage-color: black,
     axes: (x: 8, y: 15)
   ))
 ) <vector-topo-diagram>
 
+// ПОЯСНЕНИЕ: В этом разделе я перефразировал все так, чтобы М было с плюсом, обосновав это согласным включением.
 = Уравнения по законам Кирхгофа при наличии индуктивной связи
 
-/*
-ПОЯСНЕНИЕ ДЛЯ ТЕБЯ:
-В задании сказано "Полагая наличие индуктивной связи между ЛЮБЫМИ двумя индуктивностями...".
-В твоем варианте индуктивности есть в ветвях 2, 5, 6, 7.
-Самый удобный и наглядный вариант — взять смежные катушки L5 и L6 (они обе сходятся в узле 1).
+Примем наличие индуктивной связи между смежными катушками $L_5$ и $L_6$. Схема цепи с разметкой одноименных зажимов и контуров обхода представлена на рисунке @coupled-circuit.
 
-Мы выбираем "согласное" включение (точки стоят у начал ветвей).
-Согласное включение означает, что токи i5 и i6 входят в "точки" одинаково (i5 течет от 3 к 1 — входит в точку у узла 3; i6 течет от 1 к 6 — входит в точку у узла 1).
-Поэтому в дифференциальных уравнениях взаимная индукция M будет с плюсом: + M*(di/dt).
-
-В исходной схеме 6 узлов и 7 ветвей.
-Число уравнений по 1-му закону Кирхгофа (для узлов): Узлы - 1 = 6 - 1 = 5.
-Число уравнений по 2-му закону Кирхгофа (для контуров): Ветви - Узлы + 1 = 7 - 6 + 1 = 2.
-Итого 7 уравнений для 7 неизвестных токов.
-*/
-
-Полагаем наличие индуктивной связи между катушками $L_5$ и $L_6$. Примем согласное включение катушек (одноименные зажимы обозначены точками у начал ветвей). Схема цепи представлена на рисунке @coupled-circuit.
 #lab-figure(
   caption: [Схема электрической цепи с учетом индуктивной связи],
   above: -2em,
   gap: -1em,
   circuit-better(scale-factor: 85%, {
     import zap: *
-
     node-better("3", (0, 8), label: (content: "3", anchor: "left"), visible: true)
     node-better("1", (0, 16), label: (content: "1", anchor: "top"), visible: true)
     node-better("6", (12, 16), label: (content: "6", anchor: "top"), visible: true)
@@ -411,25 +381,14 @@
     node-better("2", (12, 0), label: (content: "2", anchor: "bottom"), visible: true)
     node-better("5", (0, 0), label: (content: "5", anchor: "bottom"), visible: true)
 
-    // Ветви 5 и 6 с точками (одноименными зажимами)
     inductor-better("L5", "3", "1", label: (content: $L_5$, anchor: "left"), arrow-label: $I_5$, arrow-side: "right", arrow-dir: "forward")
-
     inductor-better("L6", "1", "6", label: (content: $L_6$, anchor: "top"), arrow-label: $I_6$, arrow-side: "bottom", arrow-dir: "forward")
 
-    // Дуга, обозначающая взаимную индуктивность M (смещена от центров стрелок)
-    cetz.draw.bezier(
-      (0.5, 13.5), (5, 15.5), (2.5, 14),
-      stroke: (dash: "dashed", thickness: 2pt)
-    )
-    cetz.draw.bezier(
-      (0.5, 13.5), (5, 15.5), (2.5, 14),
-      mark: (start: ">", end: ">", stroke: 3pt),
-      stroke: (thickness: 0pt)
-    )
+    cetz.draw.bezier((0.5, 13.5), (5, 15.5), (2.5, 14), stroke: (dash: "dashed", thickness: 2pt))
+    cetz.draw.bezier((0.5, 13.5), (5, 15.5), (2.5, 14), mark: (start: ">", end: ">", stroke: 3pt), stroke: (thickness: 0pt))
     cetz.draw.content((3, 13.5), $M$)
 
     resistor-better("R1", "6", "4", label: (content: $R_1$, anchor: "right"), arrow-label: $I_1$, arrow-side: "left", arrow-dir: "forward")
-
     wire("6", (17, 16))
     jsource-better("J1", (17, 16), (17, 8), arrow-dir: "forward", label: (content: $J_1$, anchor: "right"))
     wire((17, 8), "4")
@@ -448,19 +407,13 @@
     inductor-better("L7", "4", (6, 8), label: (content: $L_7$, anchor: "bottom"), arrow-label: $I_7$, arrow-side: "top", arrow-dir: "forward")
     capacitor-better("C7", (6, 8), "3", label: (content: $C_7$, anchor: "bottom"))
 
-    // Обозначение контуров обхода (круговые стрелки)
-    // Верхний контур (I) — обход по часовой стрелке 3-1-6-4-3
     cetz.draw.arc((5, 13), start: 120deg, stop: -120deg, radius: 1.2, mark: (end: ">", fill: black), stroke: 0.8pt)
-//     cetz.draw.content((6.7, 11), $I$)
-
-    // Нижний контур (II) — обход по часовой стрелке 4-2-5-3-4
     cetz.draw.arc((5, 5), start: 120deg, stop: -120deg, radius: 1.2, mark: (end: ">", fill: black), stroke: 0.8pt)
-//     cetz.draw.content((6.7, 3), $I I$)
   })
 ) <coupled-circuit>
 
-Система уравнений по законам Кирхгофа имеет вид:
-
+#unbreakable[
+Система уравнений по первому и второму законам Кирхгофа:
 #mathtype-mimic[
   $ cases(
     -dot(I)_5 + dot(I)_6 = 0,
@@ -469,63 +422,31 @@
     dot(I)_1 - dot(I)_2 - dot(I)_7 = -dot(J)_1,
     dot(I)_3 - dot(I)_4 = 0,
 
-    (R_2 + X_"L2" thin j - X_"C2" thin j) thin dot(I)_2 + (R_3 - X_"C3" thin j) thin dot(I)_3 + (R_4 - X_"C4" thin j) thin dot(I)_4 - (X_"L7" thin j - X_"C7" thin j) thin dot(I)_7 = dot(E)_3,
+    (R_2 + j X_"L2" - j X_"C2") thin dot(I)_2 + (R_3 - j X_"C3") thin dot(I)_3 + (R_4 - j X_"C4") thin dot(I)_4 - (j X_"L7" - j X_"C7") thin dot(I)_7 = dot(E)_3,
 
-    R_1 dot(I)_1 + (X_"L5" thin j) thin dot(I)_5 + (X_M thin j) thin dot(I)_6 + (X_"L6" thin j) thin dot(I)_6 + (X_M thin j) thin dot(I)_5 + (X_"L7" thin j - X_"C7" thin j) thin dot(I)_7 = 0
+    R_1 dot(I)_1 + (j X_"L5") thin dot(I)_5 + (j X_M) thin dot(I)_6 + (j X_"L6") thin dot(I)_6 + (j X_M) thin dot(I)_5 + (j X_"L7" - j X_"C7") thin dot(I)_7 = 0
   ) $
 ]
+]
 
-/*
-ПОЯСНЕНИЕ ДЛЯ ТЕБЯ: ЧТО ПРОИСХОДИТ В MATHCAD
-------------------------------------------
-Пункт 6: Метод законов Кирхгофа (МЗК)
-Это самый прямой метод "в лоб". Матрица A1 — это "карта" схемы.
-Первые 5 строк — это 1-й закон Кирхгофа (узлы). 1 означает, что ток выходит из узла, -1 — входит.
-Последние 2 строки — это 2-й закон Кирхгофа (контуры). Мы суммируем падения напряжения (I*Z) по двум окнам схемы.
-B1 — это столбец "движущих сил" (источники тока для узлов и ЭДС для контуров).
-Решая x = A1^-1 * B1, мы находим токи во всех ветвях сразу.
-
-Пункт 7: Метод контурных токов (МКТ)
-Здесь мы вводим виртуальные "контурные токи", которые бегают по кругу в окнах схемы.
-Матрица B показывает, какие ветви образуют эти окна.
-IK — это сами контурные токи. Чтобы получить реальные токи (Imkt), мы смотрим,
-какие контурные токи текут через конкретную ветвь. Если через ветвь 1 течет только
-первый контурный ток, то I1 = IK1.
-
-Пункт 8: Метод узловых напряжений (МУН)
-Мы "заземляем" один узел (узел 6, потенциал = 0) и ищем потенциалы остальных узлов (вектор F).
-Матрица A связывает ветви и узлы. G — это матрица проводимостей (1/Z).
-Зная потенциалы узлов, мы находим напряжение на каждой ветви как разность потенциалов (U = A^T * F).
-Затем по закону Ома для ветви находим токи: I = U/Z + J + E/Z.
-*/
-
-= Определение токов в ветвях исходной схемы методом законов Кирхгофа
-
-Для проверки аналитических расчетов была составлена система уравнений по законам Кирхгофа и решена в среде Mathcad.
+= Расчет методом законов Кирхгофа
 #figure(image("mathcad/mathcad6.png", width: 90%), numbering: none)
 
 #block(breakable: false)[
 #set par(spacing: 0.8em)
-/*
-Кратко для тебя:
-Ikir — это итоговый результат, вектор токов во всех 7 ветвях.
-A1 — матрица, объединяющая уравнения узлов (1-й закон) и контуров (2-й закон).
-B1 — столбец, куда ушли все известные значения источников (токи и ЭДС).
-*/
-Где $I k i r$ – вектор действующих значений токов в ветвях цепи;
+Где $I k i r$ – вектор действующих значений токов;
 
-#h(1.7em) $A 1$ – матрица коэффициентов системы уравнений по первому и второму законам Кирхгофа;
+#h(1.7em) $A 1$ – матрица коэффициентов системы уравнений;
 
-#h(1.7em) $B 1$ – вектор правых частей системы уравнений (алгебраические суммы токов и ЭДС источников).
+#h(1.7em) $B 1$ – вектор правых частей (ЭДС и источники тока).
 ]
 
-= Определение токов в ветвях исходной схемы методом контурных токов
-
+= Расчет методом контурных токов
 #figure(image("mathcad/mathcad7.png", width: 85%), numbering: none)
 
 #block(breakable: false)[
 #set par(spacing: 0.8em)
-Где $Z D = op("diag")(Z)$ – диагональная матрица комплексных сопротивлений;
+Где $Z D$ – диагональная матрица сопротивлений ветвей;
 
 #h(1.7em) $B$ – контурная матрица;
 
@@ -533,12 +454,10 @@ B1 — столбец, куда ушли все известные значен�
 
 #h(1.7em) $I K$ – вектор контурных токов;
 
-#h(1.7em) $I m k t$ – итоговый вектор токов в ветвях цепи.
+#h(1.7em) $I m k t$ – итоговый вектор токов в ветвях.
 ]
 
-
-= Определение токов в ветвях исходной схемы методом узловых напряжений
-
+= Расчет методом узловых напряжений
 #figure(image("mathcad/mathcad8.png", width: 65%), numbering: none)
 
 #block(breakable: false)[
@@ -547,25 +466,32 @@ B1 — столбец, куда ушли все известные значен�
 
 #h(1.7em) $G$ – диагональная матрица проводимостей ветвей;
 
-#h(1.7em) $F$ – вектор узловых потенциалов относительно базисного узла;
+#h(1.7em) $F$ – вектор узловых потенциалов;
 
-#h(1.7em) $U$ – вектор напряжений на ветвях;
-
-#h(1.7em) $I m u n$ – итоговый вектор токов в ветвях.
+#h(1.7em) $U$ – вектор напряжений на ветвях.
 ]
 
-= Определение тока в ветви 5 методом эквивалентного генератора напряжения (МЭГН)
-В соответствии с заданием, определим ток $dot(I)_5$ методом эквивалентного генератора. Для этого исключим ветвь 5 (с индуктивностью $L_5$) из исходной схемы.
+// ПОЯСНЕНИЕ: В МЭГН текст сжат до алгоритма: Обрыв ветви -> Uxx -> Zген -> Ток.
+= Определение тока в ветви 5 методом эквивалентного генератора (МЭГН)
 
-== Определение напряжения холостого хода
+Исключим ветвь 5 из исходной схемы. //Поскольку узел 1 повисает в воздухе, ток $dot(I)_6 = 0$, и весь ток источника $dot(J)_1$ замыкается через ветвь 1: $dot(I)_"1xx" = -dot(J)_1$.
+Для замкнутого контура, образованного ветвью 7 и ветвью 2-3-4, ток равен:
+#let I7_xx = div(E3, add(Z7, Z234))
+#mathtype-mimic[
+  $ dot(I)'_7 = dot(E)_3 / (dot(Z)_7 + dot(Z)_234) = #display-complex(I7_xx).polar " А". $
+]
 
-В полученной схеме (рис. @meg-xx) ветвь 6 (с индуктивностью $L_6$) также оказывается разомкнутой с одной стороны. Поэтому ток в ней равен нулю ($dot(I)_6 = 0$), а потенциалы узлов 1 и 6 равны ($dot(phi)_1 = dot(phi)_6$).
+Напряжение холостого хода (рис. @meg-xx):
+#let U_xx = sub(mul(J1, Z1), mul(I7_xx, Z7))
+#mathtype-mimic[
+  $ dot(U)_"xx" = dot(phi)_3 - dot(phi)_1 = dot(J)_1 dot(Z)_1 - dot(I)'_7 dot(Z)_7 = #display-complex(U_xx).polar " В". $
+]
 
 #lab-figure(
   caption: [Схема для определения напряжения холостого хода],
-  above: -1em,
-  gap: -1em,
-  circuit-better(scale-factor: 85%, {
+  above: -5em,
+  gap: -4em,
+  scale(85%, circuit-better(scale-factor: 85%, {
     import zap: *
     node-better("3", (0, 8), label: (content: "3", anchor: "left"), visible: true)
     node-better("1", (0, 16), label: (content: "1", anchor: "top-left"), visible: true)
@@ -574,68 +500,40 @@ B1 — столбец, куда ушли все известные значен�
     node-better("2", (12, 0), label: (content: "2", anchor: "bottom-right"), visible: true)
     node-better("5", (0, 0), label: (content: "5", anchor: "bottom-left"), visible: true)
 
-    // Разорванная ветвь 5 (3 -> 1)
     open-branch-better("XX5", "3", "1", label: $dot(U)_"xx"$, arrow-side: "left", arrow-dir: "forward", show-terminals: true)
 
-    // Ветвь 6 (1 -> 6)
     current-arrow("I6", "1", (4, 16), arrow-label: $I_6=0$, arrow-side: "bottom")
     inductor-better("L6", (4, 16), "6", label: (content: $L_6$, anchor: "top"))
 
-    // Ветвь 1 (6 -> 4)
     current-arrow("I1", "6", (12, 13), arrow-label: $-dot(J)_1$, arrow-side: "left")
     resistor-better("R1", (12, 13), "4", label: (content: $R_1$, anchor: "right"))
 
-    // Источник тока J1 (параллельно ветви 6->4)
     wire("6", (17, 16))
     jsource-better("J1", (17, 16), (17, 8), arrow-dir: "forward", label: (content: $J_1$, anchor: "right"))
     wire((17, 8), "4")
 
-    // Ветвь 2 (4 -> 2)
     resistor-better("R2", "4", (12, 5.3), label: (content: $R_2$, anchor: "right"))
     inductor-better("L2", (12, 5.3), (12, 2.7), label: (content: $L_2$, anchor: "right"))
     capacitor-better("C2", (12, 2.7), "2", label: (content: $C_2$, anchor: "right"))
 
-    // Ветвь 3 (2 -> 5)
     resistor-better("R3", "2", (8, 0), label: (content: $R_3$, anchor: "bottom"))
     capacitor-better("C3", (8, 0), (4, 0), label: (content: $C_3$, anchor: "bottom"))
     source-better("E3", (4, 0), "5", label: (content: $E_3$, anchor: "bottom"), arrow-dir: "forward")
 
-    // Ветвь 4 (5 -> 3)
     resistor-better("R4", "5", (0, 4), label: (content: $R_4$, anchor: "left"))
     capacitor-better("C4", (0, 4), "3", label: (content: $C_4$, anchor: "left"))
 
-    // Ветвь 7 (4 -> 3)
-    current-arrow("I7xx", "4", (9, 8), arrow-label: $dot(I)_"7xx"$, arrow-side: "top")
+    current-arrow("I7xx", "4", (9, 8), arrow-label: $dot(I)'_7$, arrow-side: "top")
     inductor-better("L7", (9, 8), (4, 8), label: (content: $L_7$, anchor: "bottom"))
     capacitor-better("C7", (4, 8), "3", label: (content: $C_7$, anchor: "bottom"))
-  })
+  }))
 ) <meg-xx>
 
-Так как $dot(I)_6 = 0$, весь ток источника $dot(J)_1$ замыкается через ветвь 1. Следовательно, ток в первой ветви $dot(I)_"1xx" = -dot(J)_1$.
-Контур, образованный ветвями 7 и 2-3-4, оказывается полностью изолированным от внешних токов. Найдем циркулирующий в нем ток $dot(I)_"7xx"$:
-
-#let I7_xx = div(E3, add(Z7, Z234))
-#mathtype-mimic[
-  $ dot(I)_"7xx" = dot(E)_3 / (dot(Z)_7 + dot(Z)_234) = (#display-complex(E3).polar) / (#display-complex(Z7).rect + (#display-complex(Z234).rect)) = #display-complex(I7_xx).polar " А". $
-]
-
-Напряжение холостого хода $dot(U)_"xx"$ между узлами 3 и 1 найдем как разность потенциалов:
-#let U_xx = sub(mul(J1, Z1), mul(I7_xx, Z7))
-#mathtype-mimic[
-  $ dot(U)_"xx" &= dot(phi)_3 - dot(phi)_1 = dot(phi)_3 - dot(phi)_6 = (dot(phi)_4 - dot(I)_"7xx" dot(Z)_7) - (dot(phi)_4 - dot(J)_1 dot(Z)_1) = $
-  $ = dot(J)_1 dot(Z)_1 - dot(I)_"7xx" dot(Z)_7 = #display-complex(U_xx).polar " В". $
-]
-
-== Определение эквивалентного сопротивления генератора
-Для нахождения эквивалентного сопротивления $dot(Z)_"ген"$ закоротим идеальный источник ЭДС $dot(E)_3$ и разорвем ветвь с источником тока $dot(J)_1$ (рис. @meg-zgen).
-Входное сопротивление относительно зажимов 3 и 1 состоит из последовательно соединенных участков $dot(Z)_6$, $dot(Z)_1$ и параллельного участка, состоящего из ветви 7 и эквивалентной ветви 2-3-4:
-
+Эквивалентное сопротивление генератора (рис.~@meg-zgen):
 #let Z43 = div(mul(Z7, Z234), add(Z7, Z234))
 #let Z_gen = add(add(Z1, Z6), Z43)
-
 #mathtype-mimic[
-  $ dot(Z)_"ген" &= dot(Z)_6 + dot(Z)_1 + (dot(Z)_7 dot dot(Z)_234) / (dot(Z)_7 + dot(Z)_234) = #im(V.XL6) + #V.R1 + (#display-complex(Z7).rect dot (#display-complex(Z234).rect)) / (#display-complex(Z7).rect + (#display-complex(Z234).rect)) = $
-  $ = #display-complex(Z_gen).both " Ом". $
+  $ dot(Z)_"ген" = dot(Z)_6 + dot(Z)_1 + (dot(Z)_7 dot dot(Z)_234) / (dot(Z)_7 + dot(Z)_234) = #display-complex(Z_gen).both " Ом". $
 ]
 
 #lab-figure(
@@ -651,37 +549,27 @@ B1 — столбец, куда ушли все известные значен�
     node-better("2", (12, 0), label: (content: "2", anchor: "bottom-right"), visible: true)
     node-better("5", (0, 0), label: (content: "5", anchor: "bottom-left"), visible: true)
 
-    // Зажимы
     open-branch-better("ZGEN", "3", "1", label: $dot(Z)_"ген"$, arrow-side: "left", arrow-dir: "forward", show-terminals: true)
 
-    // Ветвь 6
     inductor-better("L6", "1", "6", label: (content: $L_6$, anchor: "top"))
-
-    // Ветвь 1 (J1 разорван)
     resistor-better("R1", "6", "4", label: (content: $R_1$, anchor: "right"))
-
-    // Ветвь 2
     resistor-better("R2", "4", (12, 5.3), label: (content: $R_2$, anchor: "right"))
     inductor-better("L2", (12, 5.3), (12, 2.7), label: (content: $L_2$, anchor: "right"))
     capacitor-better("C2", (12, 2.7), "2", label: (content: $C_2$, anchor: "right"))
 
-    // Ветвь 3 (E3 закорочен)
     resistor-better("R3", "2", (8, 0), label: (content: $R_3$, anchor: "bottom"))
     capacitor-better("C3", (8, 0), (4, 0), label: (content: $C_3$, anchor: "bottom"))
     wire((4, 0), "5")
 
-    // Ветвь 4
     resistor-better("R4", "5", (0, 4), label: (content: $R_4$, anchor: "left"))
     capacitor-better("C4", (0, 4), "3", label: (content: $C_4$, anchor: "left"))
 
-    // Ветвь 7
     inductor-better("L7", "4", (6, 8), label: (content: $L_7$, anchor: "bottom"))
     capacitor-better("C7", (6, 8), "3", label: (content: $C_7$, anchor: "bottom"))
   })
 ) <meg-zgen>
 
-== Расчет искомого тока
-По теореме об эквивалентном генераторе определим ток в пятой ветви:
+Искомый ток по закону Ома:
 #let I5_meg = div(U_xx, add(Z_gen, Z5))
 #mathtype-mimic[
   $ dot(I)_5 = dot(U)_"xx" / (dot(Z)_"ген" + dot(Z)_5) = (#display-complex(U_xx).polar) / (#display-complex(Z_gen).rect + #im(V.XL5)) = #display-complex(I5_meg).polar " А". $
@@ -690,7 +578,6 @@ B1 — столбец, куда ушли все известные значен�
 
 = Таблица ответов
 
-// Хелпер для быстрой генерации строк таблицы
 #let tbl_row(name, complex_val) = {
   let r = complex-math.to-rect(complex_val)
   let p = complex-math.to-polar(complex_val)
@@ -704,7 +591,7 @@ B1 — столбец, куда ушли все известные значен�
 }
 
 #figure(
-  caption: [Таблица ответов],
+  caption: [Результаты расчета],
   table(
     columns: (auto, 1fr, 1fr, 1fr, 1fr),
     align: center + horizon,
@@ -722,7 +609,7 @@ B1 — столбец, куда ушли все известные значен�
     ..tbl_row([Ток $dot(I)_6$, А], I6),
     ..tbl_row([Ток $dot(I)_7$, А], I7),
     ..tbl_row([Мощность $dot(S)_"ист"$, ВА], S_source),
-    ..tbl_row([Мощность $dot(S)_"потр"$, ВА], S_load),
+//     ..tbl_row([Мощность $dot(S)_"потр"$, ВА], S_),
     ..tbl_row([$dot(U)_"xx"$, В], U_xx),
     ..tbl_row([$dot(Z)_"ген"$, Ом], Z_gen),
   )
