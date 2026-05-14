@@ -4,6 +4,7 @@
 //сделать x x красивее
 //сделать обход мэгн
 //убрать говнотекст
+//расстояние после скобки кал
 
 #import "@local/typst-bsuir-core:1.15.45": *
 #import "@preview/zap:0.5.0"
@@ -101,7 +102,7 @@
 #figure(
   caption: [Исходные данные варианта],
   table(
-    columns: (auto, auto, auto, auto, auto, auto, auto, auto, auto),
+    columns: (1fr, auto, 0.3fr, 0.3fr, 0.3fr, auto, auto, auto, auto),
     align: center + horizon,
     table.header(
       table.cell(rowspan: 2)[Номер\ ветви],
@@ -261,6 +262,29 @@
   $ dot(I)_1 = dot(I)_156 - dot(J)_1 = (#display-complex(I156).rect) - (#display-complex(J1).rect) = #display-complex(I1).polar " А". $
 ]
 
+По найденным комплексам действующих значений токов запишем их мгновенные значения, учитывая, что амплитудное значение тока $I_m = sqrt(2) I$:
+
+#let get-inst(c) = {
+  let p = complex-math.to-polar(c)
+  let mag = p.mag * calc.sqrt(2)
+  let ang = calc.abs(p.ang)
+  let sign = if p.ang < 0 { $-$ } else { $+$ }
+  return (mag: _fmt(mag, digits: 3), sign: sign, ang: _fmt(ang, digits: 3))
+}
+#let i1 = get-inst(I1); #let i2 = get-inst(I2); #let i3 = get-inst(I3)
+#let i4 = get-inst(I4); #let i5 = get-inst(I5); #let i6 = get-inst(I6); #let i7 = get-inst(I7)
+
+#mathtype-mimic[
+  $ i_1 &= #i1.mag sin(omega t #i1.sign #i1.ang degree) " А"; $
+  $ i_2 &= #i2.mag sin(omega t #i2.sign #i2.ang degree) " А"; $
+  $ i_3 &= #i3.mag sin(omega t #i3.sign #i3.ang degree) " А"; $
+  $ i_4 &= #i4.mag sin(omega t #i4.sign #i4.ang degree) " А"; $
+  $ i_5 &= #i5.mag sin(omega t #i5.sign #i5.ang degree) " А"; $
+  $ i_6 &= #i6.mag sin(omega t #i6.sign #i6.ang degree) " А"; $
+  $ i_7 &= #i7.mag sin(omega t #i7.sign #i7.ang degree) " А". $
+]
+
+
 = Составление баланса мощностей
 Проверим правильность вычислений, составив баланс комплексных мощностей. Полная мощность, отдаваемая источниками ($dot(S)_"ист"$), должна быть равна полной мощности, потребляемой пассивными элементами цепи ($dot(S)_"потр"$).
 
@@ -354,7 +378,7 @@
   )
 ) <vector-topo-diagram>
 
-= Уравнения по законам Кирхгофа при наличии магнитной связи
+= Уравнения по законам Кирхгофа при наличии индуктивной связи
 
 /*
 ПОЯСНЕНИЕ ДЛЯ ТЕБЯ:
@@ -372,10 +396,9 @@
 Итого 7 уравнений для 7 неизвестных токов.
 */
 
-Полагаем, что между катушками индуктивности $L_5$ и $L_6$ существует магнитная связь со взаимной индуктивностью $M$. Выберем согласное включение катушек (одноименные зажимы обозначены точками у начал соответствующих ветвей). Схема цепи с учетом магнитной связи представлена на рисунке @coupled-circuit.
-
+Полагаем наличие индуктивной связи между катушками $L_5$ и $L_6$. Примем согласное включение катушек (одноименные зажимы обозначены точками у начал ветвей). Схема цепи представлена на рисунке @coupled-circuit.
 #lab-figure(
-  caption: [Схема электрической цепи с учетом магнитной связи],
+  caption: [Схема электрической цепи с учетом индуктивной связи],
   above: -1em,
   circuit-better(scale-factor: 85%, {
     import zap: *
@@ -422,24 +445,23 @@
   })
 ) <coupled-circuit>
 
-Запишем систему интегро-дифференциальных уравнений для мгновенных значений токов и напряжений. Система состоит из пяти уравнений по первому закону Кирхгофа (для узлов 1, 2, 3, 4, 5) и двух уравнений по второму закону Кирхгофа (для контуров 3-1-6-4-3 и 4-2-5-3-4):
+Система интегро-дифференциальных уравнений по законам Кирхгофа для контуров 3-1-6-4-3 и 4-2-5-3-4 имеет вид:
 
-#mathtype-mimic[ //todo d and i dist too big?
-  $ cases(
-    i_5 - i_6 = 0,
-    i_2 - i_3 = 0,
-    i_4 + i_7 - i_5 = 0,
-    i_1 - i_2 - i_7 + j_1 = 0,
-    i_3 - i_4 = 0,
+// #mathtype-mimic[ // d and i dist too big? mabyde create function for differentials?
+//   $ cases(
+//     i_5 - i_6 = 0,
+//     i_2 - i_3 = 0,
+//     i_4 + i_7 - i_5 = 0,
+//     i_1 - i_2 - i_7 + j_1 = 0,
+//     i_3 - i_4 = 0,
+//
+//     L_5 (d i_5)/(d t) + M (d i_6)/(d t) + L_6 (d i_6)/(d t) + M (d i_5)/(d t) + i_1 R_1 + L_7 (d i_7)/(d t) + 1/C_7 integral i_7 d t = 0,
+//
+//     i_2 R_2 + L_2 (d i_2)/(d t) + 1/C_2 integral i_2 d t + i_3 R_3 + 1/C_3 integral i_3 d t + i_4 R_4 + 1/C_4 integral i_4 d t - L_7 (d i_7)/(d t) - 1/C_7 integral i_7 d t = e_3
+//   ) $
+// ]
 
-    L_5 (d i_5)/(d t) + M (d i_6)/(d t) + L_6 (d i_6)/(d t) + M (d i_5)/(d t) + i_1 R_1 + L_7 (d i_7)/(d t) + 1/C_7 integral i_7 d t = 0,
-
-    i_2 R_2 + L_2 (d i_2)/(d t) + 1/C_2 integral i_2 d t + i_3 R_3 + 1/C_3 integral i_3 d t + i_4 R_4 + 1/C_4 integral i_4 d t - L_7 (d i_7)/(d t) - 1/C_7 integral i_7 d t = e_3
-  ) $
-]
-
-//todo small integral -> big?
-Запишем эту же систему уравнений в комплексной форме. Учитывая, что $(d i)/(d t) -> j omega dot(I)$, $1/C integral i d t -> 1/(j omega C) dot(I) = -j X_C dot(I)$ и $omega M = X_M$, получим:
+Запишем эту же систему уравнений в комплексной форме:
 
 #mathtype-mimic[
   $ cases(
@@ -449,9 +471,9 @@
     dot(I)_1 - dot(I)_2 - dot(I)_7 + dot(J)_1 = 0,
     dot(I)_3 - dot(I)_4 = 0,
 
-    j X_(L 5) dot(I)_5 + j X_M dot(I)_6 + j X_(L 6) dot(I)_6 + j X_M dot(I)_5 + R_1 dot(I)_1 + (j X_(L 7) - j X_(C 7)) dot(I)_7 = 0,
+    j X_(L 5) dot(I)_5 + j X_M dot(I)_6 + j X_(L 6) dot(I)_6 + j X_M dot(I)_5 + R_1 dot(I)_1 + (j X_(L 7) - j X_(C 7)) thin dot(I)_7 = 0,
 
-    (R_2 + j X_(L 2) - j X_(C 2)) dot(I)_2 + (R_3 - j X_(C 3)) dot(I)_3 + (R_4 - j X_(C 4)) dot(I)_4 - (j X_(L 7) - j X_(C 7)) dot(I)_7 = dot(E)_3
+    (R_2 + j X_(L 2) - j X_(C 2)) thin dot(I)_2 + (R_3 - j X_(C 3)) thin dot(I)_3 + (R_4 - j X_(C 4)) thin dot(I)_4 - (j X_(L 7) - j X_(C 7)) thin dot(I)_7 = dot(E)_3
   ) $
 ]
 
@@ -664,7 +686,6 @@ B1 — столбец, куда ушли все известные значен�
 #mathtype-mimic(receive: true)[
   $ dot(I)_5 = dot(U)_(x x) / (dot(Z)_"ген" + dot(Z)_5) = (#display-complex(U_xx).polar) / (#display-complex(Z_gen).rect + j #V.XL5) = #display-complex(I5_meg).polar " А". $
 ]
-Полученное значение тока полностью совпадает со значением, вычисленным ранее методом эквивалентных преобразований. //todo кринж
 
 
 = Таблица ответов
