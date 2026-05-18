@@ -1,4 +1,4 @@
-#import "@local/typst-bsuir-core:1.16.15": *
+#import "@local/typst-bsuir-core:1.17.1": *
 #import "@preview/zap:0.5.0"
 
 #set text(font: "Times New Roman", size: 14pt)
@@ -189,6 +189,7 @@
 #lab-figure(
   caption: [Эквивалентная схема цепи],
   above: -1em,
+  gap: -0.5em,
   circuit-better(scale-factor: 85%, {
     import zap: *
     node-better("3", (0, 3), label: (content: "3", anchor: "left"), visible: true)
@@ -475,7 +476,7 @@ Cоставим уравнение по второму закону Кирхго
   $ dot(I)'_7 = (-dot(E)_3) / (dot(Z)_7 + dot(Z)_234) = #display-complex(I7_xx).polar " А". $
 ]
 
-Напряжение холостого хода (рис. @meg-xx):
+Определяем напряжение холостого хода (рис. @meg-xx):
 #let U_xx = sub(mul(J1, Z1), mul(I7_xx, Z7))
 #mathtype-mimic[
   $ dot(U)_"xx" = dot(phi)_3 - dot(phi)_1 = dot(J)_1 thin dot(Z)_1 - dot(I)'_7 thin dot(Z)_7 = #display-complex(U_xx).polar " В". $
